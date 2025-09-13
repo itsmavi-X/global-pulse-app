@@ -1,6 +1,6 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { type RegionData } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import { Skeleton } from './ui/skeleton';
