@@ -118,7 +118,7 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
           <li>The API key has restrictions (e.g., HTTP referrers) that are blocking access.</li>
         </ul>
         <p className="text-muted-foreground mt-4">
-          Please check your settings in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a> and ensure your key is configured correctly.
+          Please check your settings in the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a> and ensure your key is configured correctly.
         </p>
       </>
     ));
@@ -135,7 +135,7 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
             <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
         </pre>
         <p className="text-muted-foreground mt-4">
-            You can create and manage API keys in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a>. You will also need to enable the "Maps JavaScript API" in your project.
+            You can create and manage API keys in the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a>. You will also need to enable the "Maps JavaScript API" in your project.
         </p>
       </>
     ));
