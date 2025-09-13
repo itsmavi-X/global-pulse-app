@@ -1,11 +1,10 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { type RegionData } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface MoodMapProps {
   regions: RegionData[];
@@ -24,41 +23,6 @@ const sentimentColorsHover: Record<string, string> = {
   neutral: 'hsla(43, 74%, 66%, 1)',
 };
 
-function MapComponent({ regions, onSelectRegion }: MoodMapProps) {
-  const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
-  
-  return (
-    <Map
-      center={{ lat: 20, lng: 0 }}
-      zoom={2.5}
-      gestureHandling={'greedy'}
-      disableDefaultUI={true}
-      mapId={'a2c98e1f216259ac'}
-      styles={[{featureType:"all",elementType:"labels.text.stroke",stylers:[{color:"#ffffff"},{weight:3}]},{featureType:"all",elementType:"labels.text.fill",stylers:[{color:"#746855"}]}]}
-    >
-      {regions.map((region) => (
-        <AdvancedMarker
-          key={region.id}
-          position={region.coords}
-          onClick={() => onSelectRegion(region.id)}
-          onPointerEnter={() => setHoveredRegionId(region.id)}
-          onPointerLeave={() => setHoveredRegionId(null)}
-        >
-          <div
-            className="w-8 h-8 rounded-full border-2 border-white/80 shadow-lg transition-all cursor-pointer"
-            style={{
-              backgroundColor: hoveredRegionId === region.id ? sentimentColorsHover[region.sentiment] : sentimentColors[region.sentiment],
-              transform: hoveredRegionId === region.id ? 'scale(1.2)' : 'scale(1)',
-            }}
-          >
-            <span className="sr-only">{region.name} - {region.sentiment}</span>
-          </div>
-        </AdvancedMarker>
-      ))}
-    </Map>
-  )
-}
-
 function renderError(title: string, children: React.ReactNode) {
   return (
     <div className="w-full h-full min-h-screen bg-muted flex items-center justify-center p-4 text-center">
@@ -75,53 +39,17 @@ function renderError(title: string, children: React.ReactNode) {
   );
 }
 
-
 export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const { toast } = useToast();
-  const [authFailed, setAuthFailed] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
 
-    const handleAuthFailure = () => {
-      setAuthFailed(true);
-      toast({
-        variant: "destructive",
-        title: "Map Authentication Failed",
-        description: "Please check your Google Maps API key settings.",
-      });
-    };
-    
-    window.addEventListener('gm_authFailure', handleAuthFailure);
-
-    return () => {
-      window.removeEventListener('gm_authFailure', handleAuthFailure);
-    };
-  }, [toast]);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!isClient) {
     return <Skeleton className="w-full h-full min-h-screen" />;
-  }
-  
-  if (authFailed) {
-    return renderError("Map Authentication Failed", (
-      <>
-        <p className="text-muted-foreground">
-          There is a problem with your Google Maps API key. The map could not be loaded. This is usually caused by one of the following issues:
-        </p>
-        <ul className="text-sm text-muted-foreground/80 list-disc list-inside text-left my-4 space-y-1">
-          <li>The API key is incorrect or invalid.</li>
-          <li>The "Maps JavaScript API" is not enabled in your Google Cloud project.</li>
-          <li>Billing is not enabled for your Google Cloud project.</li>
-          <li>The API key has restrictions (e.g., HTTP referrers) that are blocking access.</li>
-        </ul>
-        <p className="text-muted-foreground mt-4">
-          Please check your settings in the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a> and ensure your key is configured correctly.
-        </p>
-      </>
-    ));
   }
 
   if (!apiKey) {
@@ -140,12 +68,48 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
       </>
     ));
   }
-
+  
   return (
     <div className="w-full h-screen">
       <APIProvider apiKey={apiKey}>
-        <MapComponent regions={regions} onSelectRegion={onSelectRegion} />
+        <Map
+          center={{ lat: 20, lng: 0 }}
+          zoom={2.5}
+          gestureHandling={'greedy'}
+          disableDefaultUI={true}
+          mapId={'a2c98e1f216259ac'}
+        >
+          <MapInner regions={regions} onSelectRegion={onSelectRegion} />
+        </Map>
       </APIProvider>
     </div>
   );
 }
+
+function MapInner({ regions, onSelectRegion }: MoodMapProps) {
+    const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
+  
+    return (
+      <>
+        {regions.map((region) => (
+          <AdvancedMarker
+            key={region.id}
+            position={region.coords}
+            onClick={() => onSelectRegion(region.id)}
+            onPointerEnter={() => setHoveredRegionId(region.id)}
+            onPointerLeave={() => setHoveredRegionId(null)}
+          >
+            <div
+              className="w-8 h-8 rounded-full border-2 border-white/80 shadow-lg transition-all cursor-pointer"
+              style={{
+                backgroundColor: hoveredRegionId === region.id ? sentimentColorsHover[region.sentiment] : sentimentColors[region.sentiment],
+                transform: hoveredRegionId === region.id ? 'scale(1.2)' : 'scale(1)',
+              }}
+            >
+              <span className="sr-only">{region.name} - {region.sentiment}</span>
+            </div>
+          </AdvancedMarker>
+        ))}
+      </>
+    );
+  }
