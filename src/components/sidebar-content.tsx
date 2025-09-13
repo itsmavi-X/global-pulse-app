@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { type RegionData, type Sentiment } from '@/lib/data';
 import { Filter, Frown, Meh, Smile, TrendingUp, Newspaper } from 'lucide-react';
+import PostAnalyzer from './post-analyzer';
 
 interface SidebarContentProps {
   setFilter: (filter: Sentiment | 'all') => void;
@@ -20,6 +21,8 @@ export default function SidebarContentComponent({
 }: SidebarContentProps) {
   return (
     <div className="p-4 space-y-6">
+      <PostAnalyzer />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
