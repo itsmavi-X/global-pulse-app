@@ -1,10 +1,11 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { type RegionData } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface MoodMapProps {
   regions: RegionData[];
@@ -58,43 +59,8 @@ function MapComponent({ regions, onSelectRegion }: MoodMapProps) {
   )
 }
 
-function MapStatusManager({ onAuthFailure }: { onAuthFailure: () => void }) {
-  const eventLibrary = useMapsLibrary('event');
-  
-  useEffect(() => {
-    if (!eventLibrary) return;
-
-    const authFailureListener = eventLibrary.addDomListener(
-      window,
-      'gm_authFailure',
-      () => {
-        onAuthFailure();
-      }
-    );
-
-    return () => {
-      eventLibrary.removeListener(authFailureListener);
-    };
-  }, [eventLibrary, onAuthFailure]);
-
-  return null;
-}
-
-
-export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const [authFailed, setAuthFailed] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return <Skeleton className="w-full h-full min-h-screen" />;
-  }
-  
-  const renderError = (title: string, children: React.ReactNode) => (
+function renderError(title: string, children: React.ReactNode) {
+  return (
     <div className="w-full h-full min-h-screen bg-muted flex items-center justify-center p-4 text-center">
       <div className="max-w-md bg-card p-8 rounded-lg shadow-lg border-destructive/50 border">
         <div className="flex justify-center mb-4">
@@ -107,7 +73,38 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
       </div>
     </div>
   );
+}
 
+
+export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const { toast } = useToast();
+  const [authFailed, setAuthFailed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+
+    const handleAuthFailure = () => {
+      setAuthFailed(true);
+      toast({
+        variant: "destructive",
+        title: "Map Authentication Failed",
+        description: "Please check your Google Maps API key settings.",
+      });
+    };
+    
+    window.addEventListener('gm_authFailure', handleAuthFailure);
+
+    return () => {
+      window.removeEventListener('gm_authFailure', handleAuthFailure);
+    };
+  }, [toast]);
+
+  if (!isClient) {
+    return <Skeleton className="w-full h-full min-h-screen" />;
+  }
+  
   if (authFailed) {
     return renderError("Map Authentication Failed", (
       <>
@@ -147,7 +144,6 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
   return (
     <div className="w-full h-screen">
       <APIProvider apiKey={apiKey}>
-        <MapStatusManager onAuthFailure={() => setAuthFailed(true)} />
         <MapComponent regions={regions} onSelectRegion={onSelectRegion} />
       </APIProvider>
     </div>
