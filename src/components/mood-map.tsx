@@ -1,6 +1,6 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 import { type RegionData } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import { Skeleton } from './ui/skeleton';
@@ -26,7 +26,7 @@ const sentimentColorsHover: Record<string, string> = {
 function renderError(title: string, children: React.ReactNode) {
   return (
     <div className="w-full h-full min-h-screen bg-muted flex items-center justify-center p-4 text-center">
-      <div className="max-w-md bg-card p-8 rounded-lg shadow-lg border-destructive/50 border">
+      <div className="max-w-lg bg-card p-8 rounded-lg shadow-lg border-destructive/50 border">
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="w-6 h-6 text-destructive" />
@@ -52,19 +52,33 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
     return <Skeleton className="w-full h-full min-h-screen" />;
   }
 
-  if (!apiKey) {
+  if (!apiKey || apiKey === 'YOUR_API_KEY') {
     return renderError("Google Maps API Key is Missing", (
       <>
-        <p className="text-muted-foreground">
-          To display the map, please add your Google Maps API Key to your environment variables.
-          Create a file named <code className="font-mono bg-background p-1 rounded-sm">.env.local</code> in the root of your project and add the following line:
-        </p>
-        <pre className="bg-background text-left p-2 rounded-md mt-4 overflow-x-auto text-sm">
-            <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
-        </pre>
-        <p className="text-muted-foreground mt-4">
-            You can create and manage API keys in the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a>. You will also need to enable the "Maps JavaScript API" in your project.
-        </p>
+        <div className="text-left space-y-4 text-muted-foreground">
+            <p>To display the map, please follow these steps:</p>
+            <ol className="list-decimal list-inside space-y-3">
+                <li>
+                    <strong>Generate a New API Key:</strong><br/>
+                    Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a>, click <strong>"+ CREATE CREDENTIALS"</strong> and select <strong>"API key"</strong>.
+                </li>
+                <li>
+                    <strong>Add the Key to Your Project:</strong><br/>
+                    Create a file named <code className="font-mono bg-background p-1 rounded-sm text-sm">.env.local</code> in your project's root directory and add the key you just created:
+                    <pre className="bg-background text-left p-2 rounded-md mt-2 overflow-x-auto text-sm">
+                        <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
+                    </pre>
+                </li>
+                <li>
+                    <strong>Enable Required APIs:</strong><br/>
+                    In the <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-primary underline">API Library</a>, search for and enable both the <strong>"Maps JavaScript API"</strong> and the <strong>"Geocoding API"</strong>.
+                </li>
+                 <li>
+                    <strong>Restart Your Server:</strong><br/>
+                    Stop your development server and run <code className="font-mono bg-background p-1 rounded-sm text-sm">npm run dev</code> again.
+                </li>
+            </ol>
+        </div>
       </>
     ));
   }
