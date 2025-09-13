@@ -1,6 +1,6 @@
 'use client';
 
-import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { type RegionData } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import { Skeleton } from './ui/skeleton';
@@ -39,6 +39,39 @@ function renderError(title: string, children: React.ReactNode) {
   );
 }
 
+const MissingApiKeyError = () => renderError("Google Maps API Key is Missing", (
+  <>
+    <div className="text-left space-y-4 text-muted-foreground">
+        <p>To display the map, please follow these steps:</p>
+        <ol className="list-decimal list-inside space-y-3">
+            <li>
+                <strong>Generate a New API Key:</strong><br/>
+                Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a>, click <strong>"+ CREATE CREDENTIALS"</strong> and select <strong>"API key"</strong>.
+            </li>
+            <li>
+                <strong>Add the Key to Your Project:</strong><br/>
+                Create a file named <code className="font-mono bg-background p-1 rounded-sm text-sm">.env.local</code> in your project's root directory and add the key you just created:
+                <pre className="bg-background text-left p-2 rounded-md mt-2 overflow-x-auto text-sm">
+                    <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
+                </pre>
+            </li>
+            <li>
+                <strong>Enable Required APIs:</strong><br/>
+                In the <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-primary underline">API Library</a>, search for and enable both the <strong>"Maps JavaScript API"</strong> and the <strong>"Geocoding API"</strong>.
+            </li>
+            <li>
+                <strong>Enable Billing:</strong><br/>
+                The Google Maps Platform requires billing. Go to the <a href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Billing page</a> and ensure your project is linked to a billing account.
+            </li>
+             <li>
+                <strong>Restart Your Server:</strong><br/>
+                Stop your development server and run <code className="font-mono bg-background p-1 rounded-sm text-sm">npm run dev</code> again.
+            </li>
+        </ol>
+    </div>
+  </>
+));
+
 export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -53,34 +86,7 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
   }
 
   if (!apiKey || apiKey === 'YOUR_API_KEY') {
-    return renderError("Google Maps API Key is Missing", (
-      <>
-        <div className="text-left space-y-4 text-muted-foreground">
-            <p>To display the map, please follow these steps:</p>
-            <ol className="list-decimal list-inside space-y-3">
-                <li>
-                    <strong>Generate a New API Key:</strong><br/>
-                    Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Credentials page</a>, click <strong>"+ CREATE CREDENTIALS"</strong> and select <strong>"API key"</strong>.
-                </li>
-                <li>
-                    <strong>Add the Key to Your Project:</strong><br/>
-                    Create a file named <code className="font-mono bg-background p-1 rounded-sm text-sm">.env.local</code> in your project's root directory and add the key you just created:
-                    <pre className="bg-background text-left p-2 rounded-md mt-2 overflow-x-auto text-sm">
-                        <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
-                    </pre>
-                </li>
-                <li>
-                    <strong>Enable Required APIs:</strong><br/>
-                    In the <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-primary underline">API Library</a>, search for and enable both the <strong>"Maps JavaScript API"</strong> and the <strong>"Geocoding API"</strong>.
-                </li>
-                 <li>
-                    <strong>Restart Your Server:</strong><br/>
-                    Stop your development server and run <code className="font-mono bg-background p-1 rounded-sm text-sm">npm run dev</code> again.
-                </li>
-            </ol>
-        </div>
-      </>
-    ));
+    return <MissingApiKeyError />;
   }
   
   return (
@@ -95,10 +101,51 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
         >
           <MapInner regions={regions} onSelectRegion={onSelectRegion} />
         </Map>
+        <MapStatusManager />
       </APIProvider>
     </div>
   );
 }
+
+
+function MapStatusManager() {
+  const map = useMap();
+  const eventLibrary = useMapsLibrary('event');
+  const [authFailed, setAuthFailed] = useState(false);
+
+  useEffect(() => {
+    if (!map || !eventLibrary) return;
+
+    const authFailureListener = eventLibrary.addDomListener(
+      window,
+      'gm_authFailure',
+      () => {
+        setAuthFailed(true);
+      }
+    );
+    
+    // Check if the map has already failed to load
+    // This can happen if the auth error occurs before the listener is attached
+    const tilesLoadedListener = eventLibrary.addListener(map, 'tilesloaded', () => {
+        const mapDiv = map.getDiv();
+        if (mapDiv.querySelector('a[href*="error-messages"]')) {
+            setAuthFailed(true);
+        }
+    });
+
+    return () => {
+      eventLibrary.removeListener(authFailureListener);
+      eventLibrary.removeListener(tilesLoadedListener);
+    };
+  }, [map, eventLibrary]);
+
+  if (authFailed) {
+    return <MissingApiKeyError />;
+  }
+
+  return null;
+}
+
 
 function MapInner({ regions, onSelectRegion }: MoodMapProps) {
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
