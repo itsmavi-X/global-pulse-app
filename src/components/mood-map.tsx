@@ -59,12 +59,12 @@ function MapComponent({ regions, onSelectRegion }: MoodMapProps) {
 }
 
 function MapStatusManager({ onAuthFailure }: { onAuthFailure: () => void }) {
-  const coreLibrary = useMapsLibrary('core');
+  const mapsLibrary = useMapsLibrary('maps');
   
   useEffect(() => {
-    if (!coreLibrary) return;
+    if (!mapsLibrary) return;
 
-    const authFailureListener = coreLibrary.maps.event.addDomListener(
+    const authFailureListener = mapsLibrary.event.addDomListener(
       window,
       'gm_authFailure',
       () => {
@@ -73,9 +73,9 @@ function MapStatusManager({ onAuthFailure }: { onAuthFailure: () => void }) {
     );
 
     return () => {
-      coreLibrary.maps.event.removeListener(authFailureListener);
+      mapsLibrary.event.removeListener(authFailureListener);
     };
-  }, [coreLibrary, onAuthFailure]);
+  }, [mapsLibrary, onAuthFailure]);
 
   return null;
 }
