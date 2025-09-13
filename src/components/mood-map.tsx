@@ -135,7 +135,7 @@ export default function MoodMap({ regions, onSelectRegion }: MoodMapProps) {
             <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_API_KEY</code>
         </pre>
         <p className="text-muted-foreground mt-4">
-            You will also need to enable the "Maps JavaScript API" in your Google Cloud Console.
+            You can create and manage API keys in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a>. You will also need to enable the "Maps JavaScript API" in your project.
         </p>
       </>
     ));
